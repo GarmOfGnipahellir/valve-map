@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use anyhow::Error;
+use std::{collections::HashMap, str::FromStr};
 
 #[derive(Debug, Default, PartialEq)]
 pub struct Face {
@@ -25,4 +26,20 @@ pub struct Entity {
 #[derive(Debug, Default, PartialEq)]
 pub struct Map {
     pub entities: Vec<Entity>,
+}
+
+impl FromStr for Map {
+    type Err = Error;
+
+    /// # Examples
+    /// ```
+    /// use valve_map::Map;
+    /// 
+    /// let input = include_str!("../examples/basic.map");
+    /// let map = input.parse::<Map>().unwrap();
+    /// println!("{:#?}", map);
+    /// ```
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        crate::from_str(s)
+    }
 }
