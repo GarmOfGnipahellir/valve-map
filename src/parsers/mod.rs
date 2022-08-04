@@ -8,6 +8,7 @@ pub(crate) mod property;
 use crate::Map;
 use anyhow::{anyhow, Result};
 
+/// Parses a string `s` to return a [Map].
 /// # Examples
 /// ```
 /// use valve_map::from_str;
@@ -23,6 +24,7 @@ pub fn from_str(s: &str) -> Result<Map> {
 }
 
 
+/// Parses a slice of bytes `b` to return a [Map].
 /// # Examples
 /// ```
 /// use valve_map::from_bytes;
@@ -35,6 +37,7 @@ pub fn from_bytes(b: &[u8]) -> Result<Map> {
     from_str(std::str::from_utf8(b)?)
 }
 
+/// Parses the contents of a reader `r` to return a [Map].
 /// # Examples
 /// ```
 /// use std::fs::File;

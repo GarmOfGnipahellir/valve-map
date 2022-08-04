@@ -31,14 +31,6 @@ pub struct Map {
 impl FromStr for Map {
     type Err = Error;
 
-    /// # Examples
-    /// ```
-    /// use valve_map::Map;
-    /// 
-    /// let input = include_str!("../examples/basic.map");
-    /// let map = input.parse::<Map>().unwrap();
-    /// println!("{:#?}", map);
-    /// ```
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         crate::from_str(s)
     }
