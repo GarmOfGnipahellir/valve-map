@@ -6,6 +6,7 @@ use super::{common::ignored, entity::entity};
 pub(crate) fn map(i: &str) -> IResult<&str, Map> {
     let mut iter = iterator(i, preceded(ignored, entity));
     let entities = iter.collect();
+    // FIXME: iter.finish() returns err, but we get a valid map for now atleast
     Ok(("", Map { entities }))
 }
 
