@@ -31,6 +31,9 @@
 //! println!("{:#?}", map);
 //! ```
 
+#[cfg(feature = "meshing")]
+pub mod meshing;
+
 mod parsers;
 mod types;
 
