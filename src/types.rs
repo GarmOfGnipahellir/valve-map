@@ -1,10 +1,28 @@
-// (x1 y1 z1) (x2 y2 z2) (x3 y3 z3) TEXTURE_NAME [ ux uy uz offsetX ] [ vx vy vz offsetY ] rotation scaleX scaleY
+use std::collections::HashMap;
+
+#[derive(Debug, Default, PartialEq)]
 pub struct Face {
-    triangle: [[f32; 3]; 3],
-    texture_name: String,
-    axis_u: [f32; 3],
-    axis_v: [f32; 3],
-    offset: [f32; 2],
-    rotation: f32,
-    scale: [f32; 2],
+    pub triangle: [[f32; 3]; 3],
+    pub texture_name: String,
+    pub axis_u: [f32; 3],
+    pub axis_v: [f32; 3],
+    pub offset: [f32; 2],
+    pub rotation: f32,
+    pub scale: [f32; 2],
+}
+
+#[derive(Debug, Default, PartialEq)]
+pub struct Brush {
+    pub faces: Vec<Face>,
+}
+
+#[derive(Debug, Default, PartialEq)]
+pub struct Entity {
+    pub properties: HashMap<String, String>,
+    pub brushes: Vec<Brush>,
+}
+
+#[derive(Debug, Default, PartialEq)]
+pub struct Map {
+    pub entities: Vec<Entity>,
 }

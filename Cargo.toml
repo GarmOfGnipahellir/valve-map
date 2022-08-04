@@ -7,6 +7,5 @@ edition = "2021"
 
 [dependencies]
 nom = "7.1"
-combine = "4.6"
 serde = "1.0"
 anyhow = "1.0"
