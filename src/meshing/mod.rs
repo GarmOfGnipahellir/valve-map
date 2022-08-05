@@ -1,8 +1,8 @@
 mod utils;
 
-use crate::Brush;
+use crate::{Brush, Face};
 use anyhow::{anyhow, Result};
-use glam::{Mat3, Vec3};
+use glam::{Mat3, Vec2, Vec3};
 
 #[derive(Debug, Default, PartialEq)]
 pub struct Mesh {
@@ -42,9 +42,10 @@ impl Mesh {
                                 continue 'inner;
                             }
                         }
-                        polys[i].add_vert(&point);
-                        polys[j].add_vert(&point);
-                        polys[k].add_vert(&point);
+
+                        polys[i].add_vert(point, &brush.faces[i]);
+                        polys[j].add_vert(point, &brush.faces[j]);
+                        polys[k].add_vert(point, &brush.faces[k]);
                     }
                 }
             }
@@ -84,32 +85,57 @@ impl Mesh {
 #[derive(Debug, Clone)]
 pub(crate) struct Poly {
     pub normal: Vec3,
-    pub verts: Vec<Vec3>,
+    pub verts: Vec<Vert>,
 }
 
 impl Poly {
-    pub fn add_vert(&mut self, vert: &Vec3) {
-        self.verts.push(vert.clone());
+    pub fn add_vert(&mut self, position: Vec3, face: &Face) {
+        let Face {
+            axis_u,
+            axis_v,
+            offset,
+            scale,
+            ..
+        } = face;
+        let scale = Vec2::from_slice(scale);
+        let axis_u = Vec3::from_slice(axis_u) / scale.x;
+        let axis_v = Vec3::from_slice(axis_v) / scale.y;
+        let offset = Vec2::from_slice(offset);
+
+        let uv = (Vec2::new(
+            position.x * axis_u.x + position.y * axis_u.y + position.z * axis_u.z,
+            position.x * axis_v.x + position.y * axis_v.y + position.z * axis_v.z,
+        ) + offset)
+            / 64.0;
+
+        self.verts.push(Vert {
+            position,
+            normal: self.normal,
+            uv,
+        });
     }
 
-    pub fn order_verts(&self) -> Result<Vec<Vec3>> {
+    pub fn ordered_verts(&self) -> Result<Vec<Vert>> {
         if self.verts.len() < 3 {
             return Err(anyhow!("not enough points"));
         }
 
-        let center =
-            self.verts.iter().fold(Vec3::ZERO, |acc, p| acc + p.clone()) / self.verts.len() as f32;
+        let center = self
+            .verts
+            .iter()
+            .fold(Vec3::ZERO, |acc, p| acc + p.position)
+            / self.verts.len() as f32;
 
         let mut ordered = self.verts.clone();
         for n in 0..ordered.len() - 2 {
-            let a = (ordered[n] - center).normalize();
+            let a = (ordered[n].position - center).normalize();
             let p = self.normal.cross(a);
 
             let mut smallest_angle = -1.0;
             let mut smallest = usize::MAX;
 
             for m in n + 1..ordered.len() {
-                let b = (ordered[m] - center).normalize();
+                let b = (ordered[m].position - center).normalize();
                 if p.dot(b) > 0.0 {
                     let angle = a.dot(b);
                     if angle > smallest_angle {
@@ -126,19 +152,30 @@ impl Poly {
     }
 
     pub fn triangulate(&self) -> Result<Mesh> {
-        let verts = self.order_verts()?;
+        let verts = self.ordered_verts()?;
 
-        let positions = verts.iter().map(|v| v.to_array()).collect();
+        let positions = verts.iter().map(|v| v.position.to_array()).collect();
+        let normals = verts.iter().map(|v| v.normal.to_array()).collect();
+        let uvs = verts.iter().map(|v| v.uv.to_array()).collect();
         let indices = (2..verts.len())
             .flat_map(|i| [0, (i - 1) as u32, i as u32])
             .collect();
 
         Ok(Mesh {
             positions,
+            normals,
+            uvs,
             indices,
             ..Default::default()
         })
     }
+}
+
+#[derive(Debug, Clone)]
+pub(crate) struct Vert {
+    pub position: Vec3,
+    pub normal: Vec3,
+    pub uv: Vec2,
 }
 
 #[derive(Debug, Clone)]

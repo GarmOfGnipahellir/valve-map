@@ -1,36 +1,68 @@
-use macroquad::{models::Vertex, prelude::*};
+use bevy::{
+    asset::AssetServerSettings,
+    prelude::*,
+    render::{
+        mesh::Indices,
+        render_resource::{AddressMode, FilterMode, PrimitiveTopology, SamplerDescriptor},
+        texture::ImageSettings,
+    },
+};
 use valve_map::{from_str, meshing};
 
-#[macroquad::main("Valve Map")]
-async fn main() {
+fn main() {
+    App::new()
+        .insert_resource(ImageSettings {
+            default_sampler: SamplerDescriptor {
+                address_mode_u: AddressMode::Repeat,
+                address_mode_v: AddressMode::Repeat,
+                address_mode_w: AddressMode::Repeat,
+                mag_filter: FilterMode::Nearest,
+                min_filter: FilterMode::Nearest,
+                ..Default::default()
+            },
+        })
+        .insert_resource(AssetServerSettings {
+            asset_folder: "examples".to_string(),
+            ..Default::default()
+        })
+        .add_plugins(DefaultPlugins)
+        .add_startup_system(startup)
+        // .add_system(fix_texture_sampler)
+        .run();
+}
+
+fn startup(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    asset_server: Res<AssetServer>,
+) {
     let map = from_str(include_str!("basic.map")).unwrap();
     let brush = &map.entities[0].brushes[0];
-    let mesh = meshing::Mesh::from_brush(brush).unwrap();
-    let mesh = Mesh {
-        vertices: mesh
-            .positions
-            .iter()
-            .map(|p| Vertex {
-                position: Vec3::from_slice_unaligned(p),
-                uv: Vec2::ZERO,
-                color: WHITE,
-            })
-            .collect(),
-        indices: mesh.indices.iter().map(|i| *i as u16).collect(),
-        texture: None,
-    };
+    let brush_mesh = meshing::Mesh::from_brush(brush).unwrap();
 
-    loop {
-        clear_background(BLACK);
+    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, brush_mesh.positions);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, brush_mesh.normals);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, brush_mesh.uvs);
+    mesh.set_indices(Some(Indices::U32(brush_mesh.indices)));
 
-        set_camera(&Camera3D {
-            position: vec3(512.0, 256.0, 256.0),
-            target: Vec3::ZERO,
+    commands.spawn_bundle(DirectionalLightBundle {
+        transform: Transform::from_xyz(-2.0, -1.0, 1.0).looking_at(Vec3::ZERO, Vec3::Z),
+        ..Default::default()
+    });
+
+    commands.spawn_bundle(PbrBundle {
+        mesh: meshes.add(mesh),
+        material: materials.add(StandardMaterial {
+            base_color_texture: Some(asset_server.load("TECH28.png")),
             ..Default::default()
-        });
+        }),
+        ..Default::default()
+    });
 
-        draw_mesh(&mesh);
-
-        next_frame().await
-    }
+    commands.spawn_bundle(Camera3dBundle {
+        transform: Transform::from_xyz(-300.0, -150.0, 150.0).looking_at(Vec3::ZERO, Vec3::Z),
+        ..Default::default()
+    });
 }
