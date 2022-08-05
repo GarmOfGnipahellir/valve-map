@@ -8,7 +8,7 @@ use nom::{
 };
 
 pub(crate) fn num_f32(i: &str) -> IResult<&str, f32> {
-    let (i, o) = take_while(|c: char| c.is_numeric() || c == '-' || c == '.')(i)?;
+    let (i, o) = take_while(|c: char| c.is_numeric() || c == '-' || c == '.' || c == 'e')(i)?;
     Ok((
         i,
         o.parse::<f32>()
@@ -52,6 +52,10 @@ mod tests {
         assert_eq!(num_f32("-11.5"), Ok(("", -11.5)));
         assert_eq!(num_f32("32.125"), Ok(("", 32.125)));
         assert_eq!(num_f32("-32.125"), Ok(("", -32.125)));
+        assert_eq!(
+            num_f32("-1.8369701987210297e-16"),
+            Ok(("", -1.8369701987210297e-16))
+        );
     }
 
     #[test]
@@ -61,6 +65,7 @@ mod tests {
         assert_eq!(text("FOO_bar"), Ok(("", "FOO_bar")));
         assert_eq!(text("FOO-bar"), Ok(("", "FOO-bar")));
         assert_eq!(text("FOO.bar"), Ok(("", "FOO.bar")));
+        assert_eq!(text("FOO/bar"), Ok(("", "FOO/bar")));
     }
 
     #[test]
