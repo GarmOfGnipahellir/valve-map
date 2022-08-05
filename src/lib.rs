@@ -37,5 +37,8 @@ pub mod meshing;
 mod parsers;
 mod types;
 
+#[cfg(feature = "meshing")]
+pub use meshing::Mesh;
+
 pub use parsers::{from_bytes, from_reader, from_str};
 pub use types::*;

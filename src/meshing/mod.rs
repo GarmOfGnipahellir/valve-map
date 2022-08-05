@@ -17,6 +17,28 @@ impl Mesh {
         Self::default()
     }
 
+    pub fn merge(meshes: Vec<Mesh>) -> Self {
+        let mut positions = Vec::new();
+        let mut normals = Vec::new();
+        let mut uvs = Vec::new();
+        let mut indices = Vec::new();
+
+        for mut mesh in meshes {
+            let offset = positions.len() as u32;
+            positions.append(&mut mesh.positions);
+            normals.append(&mut mesh.normals);
+            uvs.append(&mut mesh.uvs);
+            indices.append(&mut mesh.indices.iter().map(|i| *i + offset).collect());
+        }
+
+        Self {
+            positions,
+            normals,
+            uvs,
+            indices,
+        }
+    }
+
     pub fn from_brush(brush: &Brush) -> Result<Self> {
         let planes = brush
             .faces
@@ -57,28 +79,6 @@ impl Mesh {
             .collect::<Result<Vec<_>>>()?;
 
         Ok(Self::merge(meshes))
-    }
-
-    pub fn merge(meshes: Vec<Mesh>) -> Self {
-        let mut positions = Vec::new();
-        let mut normals = Vec::new();
-        let mut uvs = Vec::new();
-        let mut indices = Vec::new();
-
-        for mut mesh in meshes {
-            let offset = positions.len() as u32;
-            positions.append(&mut mesh.positions);
-            normals.append(&mut mesh.normals);
-            uvs.append(&mut mesh.uvs);
-            indices.append(&mut mesh.indices.iter().map(|i| *i + offset).collect());
-        }
-
-        Self {
-            positions,
-            normals,
-            uvs,
-            indices,
-        }
     }
 }
 
