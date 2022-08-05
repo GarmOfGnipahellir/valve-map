@@ -1,13 +1,25 @@
 use crate::types::Map;
-use nom::{combinator::iterator, sequence::preceded, IResult};
+use nom::{sequence::delimited, IResult};
 
 use super::{common::ignored, entity::entity};
 
 pub(crate) fn map(i: &str) -> IResult<&str, Map> {
-    let mut iter = iterator(i, preceded(ignored, entity));
-    let entities = iter.collect();
-    // FIXME: iter.finish() returns err, but we get a valid map for now atleast
-    Ok(("", Map { entities }))
+    let mut parser = delimited(ignored, entity, ignored);
+
+    let mut input = i;
+    let mut entities = Vec::new();
+    loop {
+        if input.is_empty() {
+            return Ok(("", Map { entities }));
+        }
+        match parser(input) {
+            Ok((i, item)) => {
+                input = i;
+                entities.push(item);
+            }
+            Err(err) => return Err(err),
+        }
+    }
 }
 
 #[cfg(test)]
