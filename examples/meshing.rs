@@ -7,7 +7,7 @@ use bevy::{
         texture::ImageSettings,
     },
 };
-use valve_map::{from_str, meshing};
+use valve_map::{from_str, meshing::ToMesh};
 
 fn main() {
     App::new()
@@ -27,7 +27,6 @@ fn main() {
         })
         .add_plugins(DefaultPlugins)
         .add_startup_system(startup)
-        // .add_system(fix_texture_sampler)
         .run();
 }
 
@@ -38,14 +37,14 @@ fn startup(
     asset_server: Res<AssetServer>,
 ) {
     let map = from_str(include_str!("basic.map")).unwrap();
-    let brush = &map.entities[0].brushes[0];
-    let brush_mesh = meshing::Mesh::from_brush(brush).unwrap();
+    let worldspawn = &map.entities[0];
+    let entity_mesh = worldspawn.to_mesh().unwrap();
 
     let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, brush_mesh.positions);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, brush_mesh.normals);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, brush_mesh.uvs);
-    mesh.set_indices(Some(Indices::U32(brush_mesh.indices)));
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, entity_mesh.positions);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, entity_mesh.normals);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, entity_mesh.uvs);
+    mesh.set_indices(Some(Indices::U32(entity_mesh.indices)));
 
     commands.spawn_bundle(DirectionalLightBundle {
         transform: Transform::from_xyz(-2.0, -1.0, 1.0).looking_at(Vec3::ZERO, Vec3::Z),

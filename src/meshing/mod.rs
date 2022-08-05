@@ -1,8 +1,24 @@
 mod utils;
 
-use crate::{Brush, Face};
+use crate::{Brush, Entity, Face};
 use anyhow::{anyhow, Result};
 use glam::{Mat3, Vec2, Vec3};
+
+pub trait ToMesh {
+    fn to_mesh(&self) -> Result<Mesh>;
+}
+
+impl ToMesh for Brush {
+    fn to_mesh(&self) -> Result<Mesh> {
+        Mesh::from_brush(self)
+    }
+}
+
+impl ToMesh for Entity {
+    fn to_mesh(&self) -> Result<Mesh> {
+        Mesh::from_entity(self)
+    }
+}
 
 #[derive(Debug, Default, PartialEq)]
 pub struct Mesh {
@@ -76,6 +92,20 @@ impl Mesh {
         let meshes = polys
             .iter()
             .map(|p| p.triangulate())
+            .collect::<Result<Vec<_>>>()?;
+
+        Ok(Self::merge(meshes))
+    }
+
+    pub fn from_entity(entity: &Entity) -> Result<Self> {
+        if entity.brushes.is_empty() {
+            return Err(anyhow!("entity has no brushes"));
+        }
+
+        let meshes = entity
+            .brushes
+            .iter()
+            .map(|b| Self::from_brush(b))
             .collect::<Result<Vec<_>>>()?;
 
         Ok(Self::merge(meshes))
